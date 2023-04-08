@@ -4,12 +4,12 @@
 #include <cstdlib>
 
 // #include <omp.h>
-#include <pthread.h>
 
 #include "types.h"
 #include "posix_utils.h"
 
 using WorkerProc = void* (*)(void*); // Type alias for pthread procedures
+
 
 struct Display {
 	f64 val;
@@ -28,29 +28,36 @@ struct Display {
 
 namespace G { // Global var namespace
 Display display;
-constexpr usize BUF_SIZE = 4;
-usize buf_index = 0;
+constexpr usize BUF_SIZE = 8;
 std::array<f64, BUF_SIZE> weigh_in_buffer = {0};
+usize buf_index = 0;
+pthread_mutex_t buf_lock = PTHREAD_MUTEX_INITIALIZER;
 }
 
-// TODD: make thread safe
 void push_weight(f64 w){
+	pthread_mutex_lock(&G::buf_lock);
 	if(G::buf_index >= G::BUF_SIZE){
-		// clear buffer and update display
+		// Clear buffer and update display
+		f64 acc = 0;
+		for(const auto& n : G::weigh_in_buffer){ acc += n; }
+		G::display.val += acc;
+
 		G::buf_index = 0;
+		for(auto& n : G::weigh_in_buffer){ n = 0; }
 	}
 	G::weigh_in_buffer[G::buf_index] = w;
 	G::buf_index += 1;
+	pthread_mutex_unlock(&G::buf_lock);
 }
 
 struct Belt {
-	uint delay;
+	usize delay; // Push delay, in ms
 	f64 weight;
 
 	void run(){
 		while(1){
-			microsleep(delay * 1000000);
-			printf("[%.1f/%d] pushed.\n", weight, delay);
+			microsleep(delay * 1000);
+			printf("[%.1f/%zu] pushed.\n", weight, delay);
 			push_weight(weight);
 		}
 	}
@@ -65,10 +72,21 @@ void* belt_run_wrapper(void* belt){
 	return NULL;
 }
 
+void* display_run_wrapper(void* display){
+	Display* d = (Display*)display;
+	d->run();
+	return NULL;
+}
+
 int main(){
-	Belt* belt0 = new Belt(2, 5.0);
-	Belt* belt1 = new Belt(1, 2.0);
-	pthread_t belt0_thread, belt1_thread;
+	Belt* belt0 = new Belt(2000, 5.0);
+	Belt* belt1 = new Belt(1000, 2.0);
+	pthread_t belt0_thread, belt1_thread, display_thread;
+
+	if(pthread_create(&display_thread, NULL, display_run_wrapper, &G::display) != 0){
+		std::fprintf(stderr, "Failed to create worker thread.\n");
+		std::abort();
+	}
 	if(pthread_create(&belt0_thread, NULL, belt_run_wrapper, belt0) != 0){
 		std::fprintf(stderr, "Failed to create worker thread.\n");
 		std::abort();
