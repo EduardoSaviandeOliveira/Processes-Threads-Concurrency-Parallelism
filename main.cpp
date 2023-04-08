@@ -10,7 +10,6 @@
 
 using WorkerProc = void* (*)(void*); // Type alias for pthread procedures
 
-
 struct Display {
 	f64 val;
 
@@ -28,7 +27,7 @@ struct Display {
 
 namespace G { // Global var namespace
 Display display;
-constexpr usize BUF_SIZE = 8;
+constexpr usize BUF_SIZE = 4;
 std::array<f64, BUF_SIZE> weigh_in_buffer = {0};
 usize buf_index = 0;
 pthread_mutex_t buf_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -36,13 +35,14 @@ pthread_mutex_t buf_lock = PTHREAD_MUTEX_INITIALIZER;
 
 void push_weight(f64 w){
 	pthread_mutex_lock(&G::buf_lock);
-	if(G::buf_index >= G::BUF_SIZE){
-		// Clear buffer and update display
+	if(G::buf_index >= G::BUF_SIZE){ // Clear buffer and update display
 		f64 acc = 0;
+		// TODO: Vectorize with OpenMP
 		for(const auto& n : G::weigh_in_buffer){ acc += n; }
 		G::display.val += acc;
 
 		G::buf_index = 0;
+		// TODO: Vectorize with OpenMP
 		for(auto& n : G::weigh_in_buffer){ n = 0; }
 	}
 	G::weigh_in_buffer[G::buf_index] = w;
@@ -57,7 +57,7 @@ struct Belt {
 	void run(){
 		while(1){
 			microsleep(delay * 1000);
-			printf("[%.1f/%zu] pushed.\n", weight, delay);
+			std::fprintf(stderr,"belt: [%.1f | %zu] pushed.\n", weight, delay);
 			push_weight(weight);
 		}
 	}

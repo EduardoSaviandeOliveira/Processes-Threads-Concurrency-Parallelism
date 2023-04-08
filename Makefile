@@ -1,6 +1,6 @@
 CC := clang++ -std=c++17
-CFLAGS := -O2 -pipe -Wall -Wextra -fsanitize=address
-LDFLAGS := -lasan -lpthread
+CFLAGS := -O2 -pipe -Wall -Wextra
+LDFLAGS := -lpthread
 
 .PHONY: clean foodsec
 
