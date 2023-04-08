@@ -63,7 +63,7 @@ struct Belt {
 	}
 
 	Belt(){}
-	Belt(uint d, uint w) : delay(d), weight(w) {}
+	Belt(uint d, f64 w) : delay(d), weight(w) {}
 };
 
 void* belt_run_wrapper(void* belt){

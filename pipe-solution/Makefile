@@ -14,5 +14,5 @@ main.o: main.cpp
 	$(CC) $(CFLAGS) -c main.cpp -o main.o
 
 clean:
-	rm -f foodsec *.o *.so *.a *.lib
+	rm -f foodsec *.o *.so *.a *.lib /tmp/belt0.fifo /tmp/belt1.fifo
 
