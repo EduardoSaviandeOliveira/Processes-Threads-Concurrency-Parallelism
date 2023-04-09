@@ -3,4 +3,5 @@
 *.so
 *.lib
 *.bin
+*.fifo
 foodsec
