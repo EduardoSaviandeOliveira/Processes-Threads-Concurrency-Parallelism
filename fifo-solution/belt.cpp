@@ -47,7 +47,7 @@ int main(int argc, const char** argv){
 		std::fprintf(stderr, "Usage: belt [DELAY] [VAL] [FIFO]\n");
 		return 1;
 	}
-	uint delay = atoi(argv[1]) * 1000;
+	uint delay = atoi(argv[1]);
 	f64 weight = atof(argv[2]);
 	const char* file = argv[3];
 
