@@ -11,7 +11,7 @@
 static void microsleep(usize usec){
 	usize rem = usec % 1000000;
 	struct timespec t;
-	t.tv_sec = usec / 1000000,
+	t.tv_sec =  usec / 1000000,
 	t.tv_nsec = rem * 1000,
 	nanosleep(&t, NULL);
 }
