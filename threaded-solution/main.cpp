@@ -17,7 +17,7 @@ struct Display {
 		std::printf("[ %.2f ]\n", val);
 	}
 
-	void run(){
+	void run(usize iter){
 		while(1){
 			show();
 			microsleep(2 * 1000000);
@@ -27,10 +27,11 @@ struct Display {
 
 namespace G { // Global var namespace
 Display display;
-constexpr usize BUF_SIZE = 4;
+constexpr usize BUF_SIZE = 8;
 std::array<f64, BUF_SIZE> weigh_in_buffer = {0};
 usize buf_index = 0;
 pthread_mutex_t buf_lock = PTHREAD_MUTEX_INITIALIZER;
+usize iterations = 0;
 }
 
 void push_weight(f64 w){
@@ -54,8 +55,8 @@ struct Belt {
 	usize delay; // Push delay, in ms
 	f64 weight;
 
-	void run(){
-		while(1){
+	void run(usize iter){
+	for(usize i = 0; i < iter; i += 1){
 			microsleep(delay * 1000);
 			std::fprintf(stderr,"belt: [%.1f | %zu] pushed.\n", weight, delay);
 			push_weight(weight);
@@ -68,17 +69,23 @@ struct Belt {
 
 void* belt_run_wrapper(void* belt){
 	Belt* b = (Belt*)belt;
-	b->run();
+	b->run(G::iterations);
 	return NULL;
 }
 
 void* display_run_wrapper(void* display){
 	Display* d = (Display*)display;
-	d->run();
+	pthread_detach(pthread_self());
+	d->run(G::iterations);
 	return NULL;
 }
 
-int main(){
+int main(int argc, const char** argv){
+	if(argc < 2){
+		std::fprintf(stderr, "USAGE: foodsec [ITERATIONS]\n");
+		std::abort();
+	}
+	G::iterations = atoi(argv[1]);
 	Belt* belt0 = new Belt(2000, 5.0);
 	Belt* belt1 = new Belt(1000, 2.0);
 	pthread_t belt0_thread, belt1_thread, display_thread;
@@ -96,9 +103,8 @@ int main(){
 		std::abort();
 	}
 
-	while(1){
-		microsleep(1);
-	}
+	pthread_join(belt0_thread, NULL);
+	pthread_join(belt1_thread, NULL);
 
 	delete belt0;
 	delete belt1;
