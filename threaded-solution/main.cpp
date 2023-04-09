@@ -17,7 +17,7 @@ struct Display {
 		std::printf("[ %.2f ]\n", val);
 	}
 
-	void run(usize iter){
+	void run(){
 		while(1){
 			show();
 			microsleep(2 * 1000000);
@@ -76,7 +76,7 @@ void* belt_run_wrapper(void* belt){
 void* display_run_wrapper(void* display){
 	Display* d = (Display*)display;
 	pthread_detach(pthread_self());
-	d->run(G::iterations);
+	d->run();
 	return NULL;
 }
 

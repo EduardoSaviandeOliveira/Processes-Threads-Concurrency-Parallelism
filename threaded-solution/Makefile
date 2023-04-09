@@ -4,8 +4,7 @@ LDFLAGS := -lpthread
 
 .PHONY: clean foodsec
 
-run: foodsec
-	@./foodsec
+all: foodsec
 
 foodsec: main.o
 	$(CC) -o foodsec main.o $(LDFLAGS)
