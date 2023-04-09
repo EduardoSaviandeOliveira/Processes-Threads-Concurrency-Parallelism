@@ -1,5 +1,3 @@
-#include <array>
-#include <ctime>
 #include <cstdio>
 #include <cstdlib>
 
@@ -8,6 +6,9 @@
 #include "types.h"
 #include "posix_utils.h"
 
+namespace G {
+constexpr usize BUF_SIZE = 24;
+}
 
 void show(f64 val){
 	std::printf("[ %.2f ]\n", val);
@@ -72,10 +73,10 @@ int main(int argc, const char** argv){
 	if(pid_b0 == 0){
 		pid_t pid_b1 = fork();
 		if(pid_b1 == 0){
-			Belt b0(1000, 2.0, 10, acc0);
+			Belt b0(1000, 2.0, G::BUF_SIZE / 2, acc0);
 			b0.run(iterations);
 		} else {
-			Belt b1(2000, 5.0, 10, acc1);
+			Belt b1(2000, 5.0, G::BUF_SIZE / 2, acc1);
 			b1.run(iterations);
 		}
 	} else {

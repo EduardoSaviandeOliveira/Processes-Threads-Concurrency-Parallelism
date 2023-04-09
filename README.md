@@ -13,8 +13,15 @@ written so they can work with any non zero `BUF_SIZE`.
 Simply run `make`, you can set your compiler or include extra compiler flags by
 editing the Makefile.
 
+## Shared Memory Solution
+
+Just run with (for 1000 iterations):
+```
+$ ./foodsec 1000
+```
 
 ## Threaded Solution
+
 Just run with (for 1000 iterations):
 ```
 $ ./foodsec 1000
