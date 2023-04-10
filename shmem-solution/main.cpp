@@ -7,7 +7,7 @@
 #include "posix_utils.h"
 
 namespace G {
-constexpr usize BUF_SIZE = 24;
+constexpr usize BUF_SIZE = 32;
 }
 
 void show(f64 val){
@@ -18,7 +18,7 @@ struct Belt {
 	usize delay; // Push delay, in ms
 	f64 weight;
 	f64* data;
-	f64* acc;
+	f64* acc;   // Shared accumulator
 	usize cap;
 	usize len;
 
@@ -33,8 +33,8 @@ struct Belt {
 		len += 1;
 	}
 
-	void run(usize iter){
-		for(usize i = 0; i < iter; i += 1){
+	void run(){
+		while(1){
 			add(weight);
 			std::fprintf(stderr,"belt: [%.1f | %zu] pushed.\n", weight, delay);
 
@@ -44,7 +44,6 @@ struct Belt {
 
 	Belt(uint delay, f64 weight, usize buf_size, f64* acc) :
 		delay(delay), weight(weight), acc(acc), cap(buf_size), len(0) {
-		// data = (f64*)mmap(NULL, sizeof(*data) * n, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANON, -1, 0);
 		data = new f64 [buf_size];
 		for(usize i = 0; i < buf_size; i += 1){ data[i] = 0; }
 	}
@@ -73,17 +72,18 @@ int main(int argc, const char** argv){
 	if(pid_b0 == 0){
 		pid_t pid_b1 = fork();
 		if(pid_b1 == 0){
-			Belt b0(1000, 2.0, G::BUF_SIZE / 2, acc0);
-			b0.run(iterations);
+			Belt b0(100, 2.0, G::BUF_SIZE / 2, acc0);
+			b0.run();
 		} else {
-			Belt b1(2000, 5.0, G::BUF_SIZE / 2, acc1);
-			b1.run(iterations);
+			Belt b1(200, 5.0, G::BUF_SIZE / 2, acc1);
+			b1.run();
 		}
 	} else {
 		for(usize i = 0; i < iterations; i += 1){
 			show(*acc0 + *acc1);
 			microsleep(2000000);
 		}
+		return 0;
 	}
 
 	return 0;
