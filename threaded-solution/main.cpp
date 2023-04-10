@@ -3,12 +3,8 @@
 #include <cstdio>
 #include <cstdlib>
 
-// #include <omp.h>
-
 #include "types.h"
 #include "posix_utils.h"
-
-using WorkerProc = void* (*)(void*); // Type alias for pthread procedures
 
 struct Display {
 	f64 val;
@@ -17,8 +13,8 @@ struct Display {
 		std::printf("[ %.2f ]\n", val);
 	}
 
-	void run(){
-		while(1){
+	void run(usize iter){
+		for(usize i = 0; i < iter; i += 1){
 			show();
 			microsleep(2 * 1000000);
 		}
@@ -27,7 +23,7 @@ struct Display {
 
 namespace G { // Global var namespace
 Display display;
-constexpr usize BUF_SIZE = 8;
+constexpr usize BUF_SIZE = 32;
 std::array<f64, BUF_SIZE> weigh_in_buffer = {0};
 usize buf_index = 0;
 pthread_mutex_t buf_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -46,6 +42,7 @@ void push_weight(f64 w){
 		// TODO: Vectorize with OpenMP
 		for(auto& n : G::weigh_in_buffer){ n = 0; }
 	}
+	
 	G::weigh_in_buffer[G::buf_index] = w;
 	G::buf_index += 1;
 	pthread_mutex_unlock(&G::buf_lock);
@@ -55,11 +52,11 @@ struct Belt {
 	usize delay; // Push delay, in ms
 	f64 weight;
 
-	void run(usize iter){
-	for(usize i = 0; i < iter; i += 1){
-			microsleep(delay * 1000);
+	void run(){
+		while(1){
 			std::fprintf(stderr,"belt: [%.1f | %zu] pushed.\n", weight, delay);
 			push_weight(weight);
+			microsleep(delay * 1000);
 		}
 	}
 
@@ -69,14 +66,14 @@ struct Belt {
 
 void* belt_run_wrapper(void* belt){
 	Belt* b = (Belt*)belt;
-	b->run(G::iterations);
+	pthread_detach(pthread_self());
+	b->run();
 	return NULL;
 }
 
 void* display_run_wrapper(void* display){
 	Display* d = (Display*)display;
-	pthread_detach(pthread_self());
-	d->run();
+	d->run(G::iterations);
 	return NULL;
 }
 
@@ -86,8 +83,8 @@ int main(int argc, const char** argv){
 		std::abort();
 	}
 	G::iterations = atoi(argv[1]);
-	Belt* belt0 = new Belt(2000, 5.0);
-	Belt* belt1 = new Belt(1000, 2.0);
+	Belt* belt0 = new Belt(200, 5.0);
+	Belt* belt1 = new Belt(100, 2.0);
 	pthread_t belt0_thread, belt1_thread, display_thread;
 
 	if(pthread_create(&display_thread, NULL, display_run_wrapper, &G::display) != 0){
@@ -103,8 +100,9 @@ int main(int argc, const char** argv){
 		std::abort();
 	}
 
-	pthread_join(belt0_thread, NULL);
-	pthread_join(belt1_thread, NULL);
+	// pthread_join(belt0_thread, NULL);
+	// pthread_join(belt1_thread, NULL);
+	pthread_join(display_thread, NULL);
 
 	delete belt0;
 	delete belt1;

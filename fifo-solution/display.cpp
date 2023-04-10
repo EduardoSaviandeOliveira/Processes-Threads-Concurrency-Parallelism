@@ -38,6 +38,7 @@ int main(int argc, const char** argv){
 	mkfifo("belt1.fifo", 0666);
 	f64 acc = 0;
 	for(usize i = 0; i < iter; i += 1){
+		printf("[[%zu]]\n", i);
 		int fd0 = open("belt0.fifo", O_RDONLY);
 		int fd1 = open("belt1.fifo", O_RDONLY);
 		f64 f0 = read_f64(fd0);
@@ -53,7 +54,7 @@ int main(int argc, const char** argv){
 		G::buf_index += 2;
 		close(fd0);
 		close(fd1);
-		microsleep(2000);
+		microsleep(2000000);
 	}
 	unlink("belt0.fifo");
 	unlink("belt1.fifo");
